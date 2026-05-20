@@ -2,7 +2,10 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "doc-skills",
   "version": "1.0.0",
-  "description": "PM document skills — FRD generator with Confluence, SharePoint, and Jira integration",
+  "description": "PM document skills with FRD generator",
+  "owner": {
+    "name": "AlexBRFT"
+  },
   "plugins": [
     {
       "name": "pm-frd",
