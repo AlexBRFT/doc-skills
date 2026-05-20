@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "doc-skills",
+  "version": "1.0.0",
+  "description": "PM document skills — FRD generator with Confluence, SharePoint, and Jira integration",
+  "plugins": [
+    {
+      "name": "pm-frd",
+      "description": "Feature Requirement Document generator with publish pipeline to Confluence, SharePoint, and Jira",
+      "source": "./pm-frd",
+      "category": "product-management"
+    }
+  ]
+}
