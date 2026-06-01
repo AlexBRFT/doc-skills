@@ -9,8 +9,10 @@ argument-hint: "<feature name or problem statement> [--jira PROD-XXX]"
 
 1. **STOP AFTER GENERATING THE DRAFT.** Present the .docx to the user and WAIT. Do NOT proceed to Confluence, SharePoint, or Jira until the user explicitly says "publish", "go", "confirmed", or "ship it".
 2. **NEVER ask for Confluence space, parent page, or SharePoint folder.** They are hardcoded below.
-3. **NEVER skip Confluence or SharePoint.** If a step fails, report the error — do not silently skip.
-4. **Jira comment is LAST.** Only add the Jira comment AFTER Confluence and SharePoint are done, and ONLY with actual URLs from those steps.
+3. **ALWAYS pass `parentId: 53608488` when creating Confluence pages.** Without it the page lands at space root, which is WRONG.
+4. **NEVER use Microsoft 365 MCP for SharePoint upload.** It is read-only (403). Use Claude in Chrome instead.
+5. **NEVER skip the Jira step.** Always update customfield_10124 and add a comment with real URLs.
+6. **Jira comment is LAST.** Only add the comment AFTER Confluence and SharePoint, with ACTUAL URLs — never placeholders.
 
 ## Hardcoded Configuration
 
@@ -50,7 +52,7 @@ Create a Word document with this exact structure (no emojis):
 4. REQUIREMENTS — table: # | Requirement | User Story / Use Case | Description
 5. FUNCTIONAL AND NON-FUNCTIONAL REQUIREMENTS
 6. USER INTERACTION AND DESIGN — text-based flow chart
-7. ACCEPTANCE CRITERIA — checkbox list for QA team
+7. ACCEPTANCE CRITERIA — checkbox list (NOT a table). Each criterion is a line with an unchecked checkbox: ☐ Given [X], when [Y], then [Z]. QA team checks the box when passed. In Confluence, use task-list elements. In .docx, use ☐ unicode character prefix.
 
 Save as: `FRD-[feature-name-kebab-case].docx`
 
@@ -79,13 +81,15 @@ Execute these steps in order. Each step uses hardcoded configuration above.
 
 ### Step 6: Create Confluence Page
 
-Use the Atlassian MCP connector. Call `createConfluencePage` with:
+Use the Atlassian MCP connector. Call `createConfluencePage` with EXACTLY these parameters:
 - `cloudId`: `friendly-tech.atlassian.net`
 - `spaceId`: `53575693`
-- `parentId`: `53608488`
+- `parentId`: `53608488`  ← THIS IS REQUIRED. Without it the page lands at space root. ALWAYS pass parentId.
 - `title`: `FRD: [Feature Name]`
 - `contentFormat`: `html`
 - `body`: Convert the FRD content to HTML (headings, tables, task-list checkboxes for acceptance criteria)
+
+**If the page is created without parentId, it is WRONG. The page MUST be a child of page 53608488 ("Feature requirement document").**
 
 Add labels: `frd`, `PROD-XXX`
 
@@ -95,7 +99,10 @@ If this step fails, report the error and continue to Step 7.
 
 ### Step 7: Upload to SharePoint
 
-Use Claude in Chrome to upload the .docx via the SharePoint REST API.
+**DO NOT use the Microsoft 365 MCP connector. It is read-only and will return 403.**
+**USE Claude in Chrome browser automation instead.**
+
+If Claude in Chrome is not connected, ask the user to connect it. If the user declines, ask them to manually upload the .docx to SharePoint and provide the URL.
 
 **7a. Prepare chunks:**
 ```bash
@@ -141,6 +148,8 @@ Save this URL. You need it for Step 8.
 If Chrome is not available or upload fails, ask user to manually upload the .docx. Still continue to Step 8.
 
 ### Step 8: Update Jira
+
+**THIS STEP IS MANDATORY. NEVER SKIP IT.** Even if Confluence or SharePoint failed, still update Jira with whatever URLs are available.
 
 Use the Atlassian MCP connector. Do TWO things:
 
