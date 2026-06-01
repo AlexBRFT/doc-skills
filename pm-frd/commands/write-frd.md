@@ -1,213 +1,206 @@
 ---
-description: Create a Feature Requirement Document (.docx), publish to Confluence, upload to SharePoint, and link in Jira
+description: Create a Feature Requirement Document (.docx), review and refine it, then publish to Confluence, SharePoint, and Jira on confirmation
 argument-hint: "<feature name or problem statement> [--jira PROD-XXX]"
 ---
 
 # /write-frd -- Feature Requirement Document + Publish Pipeline
 
-Generate a structured FRD as a Word document, then push it through your delivery pipeline: Confluence page, SharePoint upload, Jira field update. Runs end-to-end in one command.
+## CRITICAL RULES — READ FIRST
 
-## Defaults
+1. **STOP AFTER GENERATING THE DRAFT.** Present the .docx to the user and WAIT. Do NOT proceed to Confluence, SharePoint, or Jira until the user explicitly says "publish", "go", "confirmed", or "ship it".
+2. **NEVER ask for Confluence space, parent page, or SharePoint folder.** They are hardcoded below.
+3. **NEVER skip Confluence or SharePoint.** If a step fails, report the error — do not silently skip.
+4. **Jira comment is LAST.** Only add the Jira comment AFTER Confluence and SharePoint are done, and ONLY with actual URLs from those steps.
 
-These defaults are always applied unless the user explicitly overrides them:
+## Hardcoded Configuration
 
-- **Confluence space**: `Product` (space key: `PROD` or whatever the key is — resolve via Atlassian MCP on first run)
-- **Confluence parent page**: The FRD page is created as a **child page** under the existing page titled "Feature requirement document" in the Product space
-- **SharePoint folder**: `Shared Documents/Product/Feature Requests/FRDs` — URL: https://friendlytech.sharepoint.com/:f:/r/Shared%20Documents/Product/Feature%20Requests/FRDs
-- **Jira project**: `PROD` — issue keys follow the pattern `PROD-XXXXX`
-- **Jira FRD field**: The **SharePoint file URL** is written to the custom field **"Link to FRD"** on the Jira issue
-
-## Invocation
+These values are FIXED. Use them directly in API calls. Never ask the user for them.
 
 ```
-/write-frd SSO for enterprise customers --jira PROD-456
-/write-frd Users can't export reports in bulk --jira PROD-789
-/write-frd [upload a brief or research doc] --jira PROD-101
-/write-frd                                   # interactive — asks for feature and Jira key
+CONFLUENCE_CLOUD_ID    = friendly-tech.atlassian.net
+CONFLUENCE_SPACE_ID    = 53575693
+CONFLUENCE_PARENT_ID   = 53608488
+SHAREPOINT_SITE        = friendlytech.sharepoint.com
+SHAREPOINT_FOLDER      = /Shared Documents/Product/Feature Requests/FRDs
+SHAREPOINT_FOLDER_URL  = https://friendlytech.sharepoint.com/Shared%20Documents/Forms/AllItems.aspx?id=%2FShared%20Documents%2FProduct%2FFeature%20Requests%2FFRDs
+JIRA_FRD_FIELD         = customfield_10124
 ```
 
-Confluence space, parent page, and SharePoint folder are never asked — they use the hardcoded defaults above.
+---
 
-## Workflow
+## PHASE 1: DRAFT (always runs)
 
 ### Step 1: Collect Inputs
 
-If not provided via flags, ask for each — one question at a time, most critical first:
-
-1. **Feature or problem statement** — accept anything: a name, a pain point, a user request, an uploaded doc
-2. **Jira issue key** — e.g. `PROD-456`. Must be a PROD project issue. If unknown, ask if the user wants to create one or skip Jira linking.
-
-Do NOT ask for Confluence space, parent page, or SharePoint folder — use the defaults.
+Ask only for:
+1. **Feature or problem statement**
+2. **Jira issue key** (e.g. PROD-456)
 
 ### Step 2: Gather Feature Context
 
-Ask conversationally — prioritize gaps, skip what's already clear:
+Ask about: problem, target users, success criteria, constraints, scope. Skip what's already clear.
 
-1. **Problem**: What problem does this solve? Who is affected? What's the business/customer impact?
-2. **Target users**: Which segment(s)? Current workarounds?
-3. **Success criteria**: How do we know this worked?
-4. **Constraints**: Technical, timeline, regulatory, dependencies?
-5. **Scope**: Full solution or phased?
+### Step 3: Generate FRD .docx
 
-If the user uploaded a document with context, extract what's available and only ask about genuine gaps.
-
-### Step 3: Generate the FRD
-
-Produce a Word document (.docx) following this exact structure. Do not use emojis.
-
-```
-FEATURE REQUIREMENT DOCUMENT
-[Feature Name]
-
-Author: [user]
-Date: [today]
-Status: Draft
-Jira: [PROD-XXX — hyperlinked to Jira URL]
-
-─────────────────────────────────────────
+Create a Word document with this exact structure (no emojis):
 
 1. NAME
-[Feature name — concise, unambiguous]
-
-2. WHY?
-[Describe the problem and how it impacts customer and/or business.
-Be specific: quantify impact where possible. Reference user research,
-support tickets, churn data, or competitive pressure if available.]
-
-3. OBJECTIVE
-[Describe the solution objective and how it will solve the problem.
-State what changes for the user after this ships. Tie to business metrics.]
-
-4. REQUIREMENTS
-
-| # | Requirement | User Story / Use Case | Description |
-|---|-------------|----------------------|-------------|
-| 1 | [Req name]  | As a [user], I want [X] so that [Y] | [Detailed description, edge cases, constraints] |
-| 2 | ...         | ...                  | ...         |
-
+2. WHY? — problem and customer/business impact
+3. OBJECTIVE — solution objective and how it solves the problem
+4. REQUIREMENTS — table: # | Requirement | User Story / Use Case | Description
 5. FUNCTIONAL AND NON-FUNCTIONAL REQUIREMENTS
-
-Functional:
-- [F1: Description]
-- [F2: Description]
-
-Non-Functional:
-- [NF1: Performance — e.g., response time < 200ms]
-- [NF2: Security — e.g., RBAC, encryption at rest]
-- [NF3: Scalability — e.g., support 10K concurrent users]
-- [NF4: Accessibility — e.g., WCAG 2.1 AA]
-
-6. USER INTERACTION AND DESIGN
-[Include a text-based flow chart describing the primary user flow.
-Use a clear step-by-step flow or decision tree format.]
-
-Example format:
-  User opens feature → Selects option A or B
-    → Option A: [step] → [step] → Success state
-    → Option B: [step] → Error handling → Retry or exit
-
-[Note: attach wireframes/mockups separately if available.]
-
-7. ACCEPTANCE CRITERIA
-
-| # | Criterion | Verification Method |
-|---|-----------|-------------------|
-| 1 | [Given X, when Y, then Z] | [Manual test / Automated / Review] |
-| 2 | ... | ... |
-```
+6. USER INTERACTION AND DESIGN — text-based flow chart
+7. ACCEPTANCE CRITERIA — checkbox list for QA team
 
 Save as: `FRD-[feature-name-kebab-case].docx`
 
-Embed the Jira issue URL as a hyperlink in the header section.
+### Step 4: STOP AND WAIT FOR USER REVIEW
 
-### Step 4: Publish to Confluence
+Present the .docx file to the user. Then say exactly:
 
-Using the Atlassian MCP connector:
+"FRD draft ready. Review it and tell me:
+1. **Publish** — I'll push to Confluence, SharePoint, and update Jira
+2. Give me **feedback** — tell me what to change
+3. **Cancel** — keep the local file, skip publishing"
 
-1. Find the page titled "Feature requirement document" in the Product space. This is the parent page.
-2. Create a **child page** under "Feature requirement document"
-3. Page title: `FRD: [Feature Name]`
-4. Convert the FRD content to Confluence-compatible format (headings, tables, panels)
-5. Add labels: `frd`, `feature-requirements`, `PROD-XXX` (the Jira issue key)
+**DO NOT PROCEED TO PHASE 2. WAIT FOR THE USER TO RESPOND.**
 
-If the parent page "Feature requirement document" is not found, warn the user and ask whether to create the page at the space root instead. Do not create the parent page without confirmation.
+### Step 5: Revision Loop
 
-Store the Confluence page URL for Step 7.
+If user gives feedback: apply changes, regenerate .docx, present again, repeat Step 4.
+If user says "publish": proceed to Phase 2.
+If user says "cancel": stop.
 
-If Confluence is unavailable, continue to Step 5.
+---
 
-### Step 5: Upload to SharePoint
+## PHASE 2: PUBLISH (only after user says "publish")
 
-Using the Microsoft 365 MCP connector:
+Execute these steps in order. Each step uses hardcoded configuration above.
 
-1. Upload the .docx file to: `Shared Documents/Product/Feature Requests/FRDs` on the friendlytech.sharepoint.com site
-2. The target folder URL is: https://friendlytech.sharepoint.com/:f:/r/Shared%20Documents/Product/Feature%20Requests/FRDs
-3. If the folder is not accessible, warn the user — do not create folders without confirmation
-4. Retrieve the SharePoint sharing URL for the uploaded file
+### Step 6: Create Confluence Page
 
-Store the SharePoint file URL — this is the URL that goes into Jira.
+Use the Atlassian MCP connector. Call `createConfluencePage` with:
+- `cloudId`: `friendly-tech.atlassian.net`
+- `spaceId`: `53575693`
+- `parentId`: `53608488`
+- `title`: `FRD: [Feature Name]`
+- `contentFormat`: `html`
+- `body`: Convert the FRD content to HTML (headings, tables, task-list checkboxes for acceptance criteria)
 
-If SharePoint is unavailable, continue to Step 6.
+Add labels: `frd`, `PROD-XXX`
 
-### Step 6: Update Jira Issue
+Save the resulting page URL. You need it for Step 8.
 
-Using the Atlassian MCP connector:
+If this step fails, report the error and continue to Step 7.
 
-1. Update the **"Link to FRD"** custom field on the PROD-XXX issue with the **SharePoint file URL** from Step 5
-2. If the "Link to FRD" field does not exist on the issue, try these fallbacks in order:
-   a. Search for a field containing "FRD" in the name
-   b. Search for a field containing "document" or "documentation" in the name
-   c. If no matching field found, add a comment instead with the SharePoint URL
-3. Add a comment to the Jira issue:
-   ```
-   Feature Requirement Document published:
-   - SharePoint: [SharePoint file URL]
-   - Confluence: [Confluence page URL]
-   ```
+### Step 7: Upload to SharePoint
 
-The **SharePoint URL** is the primary link stored in the Jira field — not the Confluence URL. The Confluence page is a readable mirror; SharePoint is the source of truth.
+Use Claude in Chrome to upload the .docx via the SharePoint REST API.
 
-### Step 7: Summary
-
-After all steps complete, present a status table:
-
-```
-Pipeline complete:
-
-| Step                  | Status | Link                    |
-|-----------------------|--------|-------------------------|
-| FRD generated         | Done   | [local file path]       |
-| Confluence page       | Done   | [Confluence page URL]   |
-| SharePoint upload     | Done   | [SharePoint file URL]   |
-| Jira "Link to FRD"   | Done   | [Jira issue URL]        |
+**7a. Prepare chunks:**
+```bash
+base64 -w 0 /path/to/FRD.docx > /tmp/frd_b64.txt
+split -b 10000 /tmp/frd_b64.txt /tmp/frd_chunk_
 ```
 
-If any step failed or was skipped, note it clearly with the reason.
+**7b. Navigate browser to SharePoint:**
+Navigate to: `https://friendlytech.sharepoint.com/Shared%20Documents/Forms/AllItems.aspx?id=%2FShared%20Documents%2FProduct%2FFeature%20Requests%2FFRDs`
 
-### Step 8: Offer Next Steps
+**7c. Store chunks in browser:**
+For each chunk file, execute a `javascript_tool` call:
+```javascript
+window.__c=window.__c||[];window.__c.push("[CHUNK_CONTENT]");window.__c.length
+```
 
-- "Want me to **break this into user stories** for the backlog?" → `/write-stories`
-- "Should I **run a pre-mortem** on this feature?" → `/pre-mortem`
-- "Want me to **generate test scenarios** from the acceptance criteria?" → `/test-scenarios`
-- "Should I **create a stakeholder update** to socialize the FRD?"
+**7d. Upload:**
+```javascript
+(async()=>{
+  try{
+    const d=await(await fetch("https://friendlytech.sharepoint.com/_api/contextinfo",
+      {method:"POST",headers:{"Accept":"application/json;odata=verbose"}})).json();
+    const t=d.d.GetContextWebInformation.FormDigestValue;
+    const b=atob(window.__c.join(""));
+    const a=new Uint8Array(b.length);
+    for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
+    const u=await fetch(
+      "https://friendlytech.sharepoint.com/_api/web/GetFolderByServerRelativeUrl('/Shared%20Documents/Product/Feature%20Requests/FRDs')/Files/add(url='[FILENAME]',overwrite=true)",
+      {method:"POST",headers:{"Accept":"application/json;odata=verbose",
+        "X-RequestDigest":t,"Content-Type":"application/octet-stream"},body:a.buffer});
+    if(!u.ok)return"Fail:"+u.status;
+    const j=await u.json();
+    delete window.__c;
+    return"OK:"+j.d.ServerRelativeUrl
+  }catch(e){return"Err:"+e.message}
+})()
+```
+
+The SharePoint file URL is: `https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/[FILENAME]`
+
+Save this URL. You need it for Step 8.
+
+If Chrome is not available or upload fails, ask user to manually upload the .docx. Still continue to Step 8.
+
+### Step 8: Update Jira
+
+Use the Atlassian MCP connector. Do TWO things:
+
+**8a. Update the "Link to FRD" field:**
+Call `editJiraIssue` with:
+- `cloudId`: `friendly-tech.atlassian.net`
+- `issueIdOrKey`: `PROD-XXX`
+- `fields`: `{"customfield_10124": "[SHAREPOINT_FILE_URL]"}`
+
+If SharePoint upload was skipped, use the Confluence page URL instead.
+
+**8b. Add a comment with ACTUAL URLs:**
+Call `addCommentToJiraIssue` with:
+- `cloudId`: `friendly-tech.atlassian.net`
+- `issueIdOrKey`: `PROD-XXX`
+- `commentBody`:
+```
+Feature Requirement Document published:
+- SharePoint: [ACTUAL SHAREPOINT URL FROM STEP 7]
+- Confluence: [ACTUAL CONFLUENCE URL FROM STEP 6]
+```
+
+**NEVER add a comment saying "links will be added later." Only add the comment with real URLs.**
+
+### Step 9: Summary
+
+Show this table:
+
+```
+| Step                | Status | Link                          |
+|---------------------|--------|-------------------------------|
+| FRD generated       | Done   | [filename]                    |
+| Confluence page     | Done   | [actual confluence page URL]  |
+| SharePoint upload   | Done   | [actual sharepoint file URL]  |
+| Jira "Link to FRD"  | Done   | [jira issue URL]              |
+| Jira comment        | Done   | comment with both URLs        |
+```
+
+### Step 10: Next Steps
+
+Offer:
+- Break into user stories → `/write-stories`
+- Run a pre-mortem → `/pre-mortem`
+- Generate test scenarios → `/test-scenarios`
+
+---
 
 ## Error Handling
 
-- **MCP connector not authenticated**: Tell the user which connector needs re-authentication and skip that step. Complete remaining steps.
-- **Parent page "Feature requirement document" not found**: Warn user, offer to create at space root or abort Confluence step.
-- **"Link to FRD" field not found in Jira**: Try fallback field names, then fall back to comment with SharePoint URL.
-- **SharePoint folder not accessible**: Warn user, provide local .docx, continue with other steps.
-- **Jira issue not found**: Ask user to verify the issue key. Offer to search by summary.
-- **Partial failure**: Complete all possible steps, report which ones failed, and provide the local .docx file regardless.
+- **Chrome not connected**: Skip SharePoint, use Confluence URL in Jira field, provide .docx for manual upload
+- **Confluence fails**: Report error, continue to SharePoint and Jira
+- **SharePoint fails**: Report error, use Confluence URL in Jira field instead
+- **Jira field update fails**: Fall back to comment only
+- **Partial failure**: Always complete all possible steps and report what failed
 
 ## Notes
 
-- The FRD format is fixed — do not rearrange sections or add emojis
-- Requirements table must use User Story OR Use Case format, not a mix, unless the user explicitly requests both
-- Flow charts in Section 6 are text-based; suggest the user attach visual wireframes separately
+- FRD format is fixed — do not rearrange sections or add emojis
 - The .docx is the source of truth, stored in SharePoint
-- Confluence page is a readable mirror of the same content
-- The SharePoint URL (not Confluence URL) is what gets written to the Jira "Link to FRD" field
-- If the feature is too large for one FRD, proactively suggest splitting into multiple FRDs by domain or phase
-- Non-functional requirements are not optional — always include at minimum: performance, security, scalability
-- Confluence page is always created under "Feature requirement document" parent in the Product space — never at root unless the parent page is missing and user confirms
+- Confluence page is a readable mirror
+- SharePoint URL (not Confluence) goes into Jira customfield_10124
+- NEVER publish without explicit user confirmation
+- NEVER add Jira comments with placeholder text — only real URLs
