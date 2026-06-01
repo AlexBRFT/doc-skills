@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "doc-skills",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "PM document skills with FRD generator",
   "owner": {
     "name": "AlexBRFT"
