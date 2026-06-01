@@ -1,6 +1,6 @@
 {
   "name": "pm-frd",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Feature Requirement Document generator with publish pipeline to Confluence, SharePoint, and Jira",
   "keywords": ["product-management", "frd", "feature-requirements", "confluence", "sharepoint", "jira"],
   "license": "MIT"
