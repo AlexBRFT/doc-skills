@@ -1,112 +1,128 @@
 ---
 name: create-frd
-description: "Create a Feature Requirement Document using a structured 7-section template: Name, Why, Objective, Requirements (user stories/use cases table), Functional and Non-Functional requirements, User Interaction flow chart, and Acceptance criteria. Use when writing an FRD, documenting feature requirements, or specifying a feature for development. Distinct from PRD — an FRD focuses on a single feature with detailed requirements and acceptance criteria, not product-level strategy."
+description: "Create a Feature Requirement Document using a structured 7-section template: Name, Why, Objective, Requirements (user stories/use cases table), Functional and Non-Functional requirements, User Interaction flow chart, and Acceptance criteria (checkbox list). Then publish to Confluence, SharePoint, and Jira. Two-phase workflow: draft first, publish only after user confirms."
 ---
 
 # Create a Feature Requirement Document
 
+## CRITICAL RULES — ALWAYS FOLLOW
+
+1. **TWO-PHASE WORKFLOW.** Phase 1: generate .docx draft and PRESENT IT TO THE USER. Phase 2: publish. NEVER go to Phase 2 without user saying "publish".
+2. **STOP AFTER GENERATING THE DRAFT.** Show the .docx, ask user to review. WAIT for "publish", "go", or "confirmed" before touching Confluence/SharePoint/Jira.
+3. **ALWAYS pass `parentId: "53608488"` when creating Confluence pages.** Without parentId the page lands at space root which is WRONG.
+4. **NEVER use Microsoft 365 MCP connector for SharePoint upload.** It is read-only and returns 403. Use Claude in Chrome browser automation instead.
+5. **NEVER skip the Jira update step.** Always update customfield_10124 and add a comment with actual URLs.
+6. **Acceptance criteria = checkbox list, NOT a table.** Each item: ☐ Given X, when Y, then Z.
+
+## Hardcoded Configuration — NEVER ASK THE USER FOR THESE
+
+```
+CONFLUENCE_CLOUD_ID    = friendly-tech.atlassian.net
+CONFLUENCE_SPACE_ID    = 53575693
+CONFLUENCE_PARENT_ID   = 53608488
+SHAREPOINT_SITE        = friendlytech.sharepoint.com
+SHAREPOINT_FOLDER      = /Shared Documents/Product/Feature Requests/FRDs
+JIRA_FRD_FIELD         = customfield_10124
+```
+
 ## Purpose
 
-You are an experienced product manager creating a Feature Requirement Document (FRD) for $ARGUMENTS. This document specifies a single feature with enough detail for engineering to build, QA to test, and stakeholders to approve.
+You are an experienced product manager creating a Feature Requirement Document (FRD). This document specifies a single feature with enough detail for engineering to build, QA to test, and stakeholders to approve.
 
-## Context
+---
 
-An FRD is not a PRD. A PRD covers product-level strategy, segments, and vision. An FRD zooms into one feature: what problem it solves, exactly what to build, how users interact with it, and how to verify it works. This skill produces a tightly scoped, implementation-ready document.
+## PHASE 1: DRAFT
 
-## FRD Structure
+### Step 1: Collect Inputs
+Ask only for:
+1. Feature or problem statement
+2. Jira issue key (e.g. PROD-456)
 
-The output must follow this exact structure. No emojis. No reordering.
+Do NOT ask for Confluence space, parent page, or SharePoint folder.
 
-### 1. NAME
-The feature name. Concise, specific, unambiguous.
+### Step 2: Gather Feature Context
+Ask about: problem, target users, success criteria, constraints, scope. Skip what's already clear from the user's input.
 
-### 2. WHY?
-Describe the problem and how it impacts the customer and/or business. Be specific:
-- What is happening today that is broken, slow, painful, or missing?
-- Who is affected and how many?
-- What is the measurable impact? (revenue loss, churn, support volume, time wasted)
-- What happens if we do nothing?
+### Step 3: Generate FRD .docx
+Create a Word document (.docx) with this exact structure. No emojis. No reordering.
 
-Ground this in data where possible: support tickets, user research, analytics, competitive pressure.
+1. **NAME** — concise, specific, unambiguous
+2. **WHY?** — problem and customer/business impact. Quantify where possible.
+3. **OBJECTIVE** — solution objective, what changes for the user, tie to business metrics
+4. **REQUIREMENTS** — table: # | Requirement | User Story / Use Case | Description
+5. **FUNCTIONAL AND NON-FUNCTIONAL REQUIREMENTS** — Functional list + Non-functional (performance, security, scalability minimum)
+6. **USER INTERACTION AND DESIGN** — text-based flow chart showing primary user flow
+7. **ACCEPTANCE CRITERIA** — checkbox list (NOT a table). Each criterion: ☐ Given [X], when [Y], then [Z]. In Confluence use task-list elements. In .docx use ☐ unicode prefix.
 
-### 3. OBJECTIVE
-Describe the solution objective and how it will solve the problem:
-- What changes for the user after this ships?
-- What is the target outcome? (not output — outcome)
-- How does this connect to business metrics or OKRs?
+Save as: `FRD-[feature-name-kebab-case].docx`
 
-One paragraph. No fluff. If you can't state the objective in 3 sentences, the scope is too broad.
+### Step 4: STOP — PRESENT DRAFT AND WAIT
 
-### 4. REQUIREMENTS
+Present the .docx to the user. Say:
 
-Present as a table. Each row is one requirement mapped to a user story or use case.
+"FRD draft ready. Review it and tell me:
+1. **Publish** — I'll push to Confluence, SharePoint, and update Jira
+2. **Feedback** — tell me what to change
+3. **Cancel** — keep the local file only"
 
-| # | Requirement | User Story / Use Case | Description |
-|---|-------------|----------------------|-------------|
-| 1 | [Name] | As a [role], I want [action] so that [benefit] | [Detailed spec: behavior, edge cases, constraints, data involved] |
-| 2 | [Name] | Use case: [Scenario description] | [Detailed spec] |
+**DO NOT PROCEED. DO NOT CREATE CONFLUENCE PAGE. DO NOT TOUCH JIRA. WAIT FOR USER RESPONSE.**
 
-Rules:
-- Pick user story OR use case format per row — don't mix unless the user explicitly wants both
-- Each requirement must be independently testable
-- Include error states and edge cases in the Description column
-- Order by priority (must-have first)
+### Step 5: Revision Loop
+- User gives feedback → apply changes, regenerate .docx, present again, repeat Step 4
+- User says "publish" → proceed to Phase 2
+- User says "cancel" → stop
 
-### 5. FUNCTIONAL AND NON-FUNCTIONAL REQUIREMENTS
+---
 
-**Functional requirements**: What the system must do. Concrete behaviors.
+## PHASE 2: PUBLISH (only after user explicitly confirms)
 
-**Non-functional requirements**: How the system must perform. Always include at minimum:
-- Performance (response times, throughput)
-- Security (authentication, authorization, data protection)
-- Scalability (concurrent users, data volume growth)
-- Accessibility (WCAG level, assistive technology support)
-- Reliability (uptime target, error rate threshold)
+### Step 6: Confluence Page
 
-Do not skip non-functional requirements. They are not optional.
+Call `createConfluencePage` with ALL of these parameters:
+- `cloudId`: `friendly-tech.atlassian.net`
+- `spaceId`: `53575693`
+- `parentId`: `53608488` ← REQUIRED — creates page under "Feature requirement document"
+- `title`: `FRD: [Feature Name]`
+- `contentFormat`: `html`
+- `body`: FRD content as HTML with headings, tables, and task-list checkboxes
 
-### 6. USER INTERACTION AND DESIGN
+**VERIFY: parentId MUST be "53608488". If you omit it, the page goes to space root which is WRONG.**
 
-A text-based flow chart showing the primary user flow through the feature. Use a step-by-step decision tree format:
+Save the Confluence page URL for Step 8.
 
-```
-User enters [screen/page]
-  -> Performs [action]
-    -> System responds with [result]
-      -> Success: [end state]
-      -> Error: [error handling] -> [recovery path]
-```
+### Step 7: SharePoint Upload
 
-Include:
-- Happy path (primary flow)
-- At least one error/edge case path
-- Entry point and exit point
+**DO NOT use Microsoft 365 MCP connector. It is read-only. It WILL return 403.**
 
-Note: this is a text representation. Visual wireframes or mockups should be attached separately.
+Use Claude in Chrome to upload via SharePoint REST API:
 
-### 7. ACCEPTANCE CRITERIA
+1. Base64-encode the .docx: `base64 -w 0 /path/to/file.docx`
+2. Navigate browser to: `https://friendlytech.sharepoint.com/Shared%20Documents/Forms/AllItems.aspx?id=%2FShared%20Documents%2FProduct%2FFeature%20Requests%2FFRDs`
+3. Store base64 chunks in browser via `javascript_tool` calls (10KB chunks)
+4. Final JS call: join chunks, decode, upload via `/_api/web/GetFolderByServerRelativeUrl('/Shared%20Documents/Product/Feature%20Requests/FRDs')/Files/add(url='[FILENAME]',overwrite=true)`
 
-| # | Criterion | Verification Method |
-|---|-----------|-------------------|
-| 1 | Given [precondition], when [action], then [expected result] | Manual test / Automated test / Code review |
+SharePoint URL: `https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/[FILENAME]`
 
-Rules:
-- Use Given-When-Then format
-- Each criterion maps back to at least one requirement from Section 4
-- Include negative test cases (what should NOT happen)
-- Every criterion must be binary pass/fail — no subjective language
+If Chrome is not available → ask user to upload .docx manually and provide the URL.
 
-## Instructions
+### Step 8: Jira Update — MANDATORY, NEVER SKIP
 
-1. If user provides files, read them first and extract all available context before asking questions.
-2. Ask only about genuine gaps — do not repeat what the user already provided.
-3. Be opinionated about scope. If a requirement is vague, push back and ask for specifics.
-4. If the feature is too large, recommend splitting into multiple FRDs before proceeding.
-5. Save the output as `FRD-[feature-name-kebab-case].docx` (Word format).
+**8a.** Call `editJiraIssue`:
+- `cloudId`: `friendly-tech.atlassian.net`
+- `issueIdOrKey`: `PROD-XXX`
+- `fields`: `{"customfield_10124": "[SHAREPOINT_URL]"}` (or Confluence URL if SharePoint was skipped)
 
-## Notes
+**8b.** Call `addCommentToJiraIssue`:
+- `commentBody`: real URLs from Steps 6 and 7. NEVER "links will be added later."
 
-- An FRD with 20+ requirements probably needs to be split
-- "The system should..." is weaker than "The system must..." — use must for P0, should for P1
-- If the user can't articulate the Why clearly, the feature isn't ready for an FRD — suggest running `/discover` first
-- Acceptance criteria are a contract with QA. If they can't test it from what you wrote, rewrite it.
+### Step 9: Summary Table
+
+Show: FRD generated, Confluence page, SharePoint upload, Jira field, Jira comment — each with status and actual link.
+
+---
+
+## Error Handling
+- Chrome not connected → skip SharePoint, use Confluence URL in Jira, provide .docx for manual upload
+- Confluence fails → report error, continue to SharePoint and Jira
+- SharePoint fails → report error, use Confluence URL in Jira
+- Jira fails → report error, never silently skip
