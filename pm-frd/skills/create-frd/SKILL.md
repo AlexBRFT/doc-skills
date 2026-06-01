@@ -11,7 +11,7 @@ description: "Create a Feature Requirement Document using a structured 7-section
 2. **STOP AFTER GENERATING THE DRAFT.** Show the .docx, ask user to review. WAIT for "publish", "go", or "confirmed" before touching Confluence/SharePoint/Jira.
 3. **NEVER call `getConfluenceSpaces` or list spaces. NEVER ask which space.** The space ID is `53575693`. Use it directly.
 4. **ALWAYS pass `parentId: "53608488"` when creating Confluence pages.** Without parentId the page lands at space root which is WRONG.
-5. **NEVER use Microsoft 365 MCP connector for SharePoint upload.** It is read-only and returns 403. Use Claude in Chrome browser automation instead.
+5. **For SharePoint: save .docx to local OneDrive folder, wait 10 seconds for sync, construct SharePoint URL.** DO NOT use Microsoft 365 MCP. DO NOT use Chrome browser automation.
 6. **NEVER skip the Jira update step.** Always update customfield_10124 and add a comment with actual URLs.
 7. **Acceptance criteria = FLAT checkbox list, NOT a table.** Each item is a paragraph: `☐ Given X, when Y, then Z`. NO columns, NO Verification Method column.
 
@@ -21,9 +21,10 @@ description: "Create a Feature Requirement Document using a structured 7-section
 CONFLUENCE_CLOUD_ID    = friendly-tech.atlassian.net
 CONFLUENCE_SPACE_ID    = 53575693
 CONFLUENCE_PARENT_ID   = 53608488
-SHAREPOINT_SITE        = friendlytech.sharepoint.com
-SHAREPOINT_FOLDER      = /Shared Documents/Product/Feature Requests/FRDs
+ONEDRIVE_LOCAL_PATH    = C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Requests\FRDs\Claude_FRD
+SHAREPOINT_URL_PREFIX  = https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD
 JIRA_FRD_FIELD         = customfield_10124
+ONEDRIVE_SYNC_WAIT     = 10 seconds
 ```
 
 ## Purpose
@@ -106,20 +107,38 @@ If the call fails with "space not found" or similar, your Atlassian MCP connecto
 
 Save the Confluence page URL for Step 8.
 
-### Step 7: SharePoint Upload
+### Step 7: Save to OneDrive (auto-syncs to SharePoint)
 
-**DO NOT use Microsoft 365 MCP connector. It is read-only. It WILL return 403.**
+**DO NOT upload via Microsoft 365 MCP. DO NOT use Chrome browser automation.**
 
-Use Claude in Chrome to upload via SharePoint REST API:
+The user's OneDrive folder syncs automatically to the SharePoint FRDs folder. Save the .docx locally to OneDrive, wait for sync, then construct the SharePoint URL.
 
-1. Base64-encode the .docx: `base64 -w 0 /path/to/file.docx`
-2. Navigate browser to: `https://friendlytech.sharepoint.com/Shared%20Documents/Forms/AllItems.aspx?id=%2FShared%20Documents%2FProduct%2FFeature%20Requests%2FFRDs`
-3. Store base64 chunks in browser via `javascript_tool` calls (10KB chunks)
-4. Final JS call: join chunks, decode, upload via `/_api/web/GetFolderByServerRelativeUrl('/Shared%20Documents/Product/Feature%20Requests/FRDs')/Files/add(url='[FILENAME]',overwrite=true)`
+**7a. Save the .docx to the local OneDrive folder:**
 
-SharePoint URL: `https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/[FILENAME]`
+Target path:
+```
+C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Requests\FRDs\Claude_FRD\[FILENAME].docx
+```
 
-If Chrome is not available → ask user to upload .docx manually and provide the URL.
+Use the appropriate file-writing tool to copy the generated .docx to this exact path. If the folder doesn't exist, create it (or report that it's missing).
+
+**7b. Wait 10 seconds for OneDrive sync:**
+
+After writing the file, wait 10 seconds. OneDrive needs time to upload the file to SharePoint.
+
+**7c. Construct the SharePoint URL:**
+
+The synced file is accessible at:
+```
+https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[FILENAME].docx
+```
+
+URL-encode the filename (spaces become %20, etc.). This URL is what goes into Jira's "Link to FRD" field in Step 8.
+
+**Error handling:**
+- If the OneDrive folder doesn't exist → ask user to create it, then continue
+- If file write fails → report error, use Confluence URL as fallback in Jira
+- Do NOT attempt to verify the SharePoint URL is reachable — just construct it. OneDrive sync may take longer than 10 seconds; the URL will become valid once sync completes.
 
 ### Step 8: Jira Update — MANDATORY, NEVER SKIP
 

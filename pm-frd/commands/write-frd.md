@@ -10,7 +10,7 @@ argument-hint: "<feature name or problem statement> [--jira PROD-XXX]"
 1. **STOP AFTER GENERATING THE DRAFT.** Present the .docx to the user and WAIT. Do NOT proceed to Confluence, SharePoint, or Jira until the user explicitly says "publish", "go", "confirmed", or "ship it".
 2. **NEVER ask for Confluence space, parent page, or SharePoint folder.** They are hardcoded below.
 3. **ALWAYS pass `parentId: 53608488` when creating Confluence pages.** Without it the page lands at space root, which is WRONG.
-4. **NEVER use Microsoft 365 MCP for SharePoint upload.** It is read-only (403). Use Claude in Chrome instead.
+5. **For SharePoint: save .docx to local OneDrive folder, wait 10 seconds for sync, construct SharePoint URL.** DO NOT use Microsoft 365 MCP. DO NOT use Chrome browser automation.
 5. **NEVER skip the Jira step.** Always update customfield_10124 and add a comment with real URLs.
 6. **Jira comment is LAST.** Only add the comment AFTER Confluence and SharePoint, with ACTUAL URLs — never placeholders.
 
@@ -22,10 +22,10 @@ These values are FIXED. Use them directly in API calls. Never ask the user for t
 CONFLUENCE_CLOUD_ID    = friendly-tech.atlassian.net
 CONFLUENCE_SPACE_ID    = 53575693
 CONFLUENCE_PARENT_ID   = 53608488
-SHAREPOINT_SITE        = friendlytech.sharepoint.com
-SHAREPOINT_FOLDER      = /Shared Documents/Product/Feature Requests/FRDs
-SHAREPOINT_FOLDER_URL  = https://friendlytech.sharepoint.com/Shared%20Documents/Forms/AllItems.aspx?id=%2FShared%20Documents%2FProduct%2FFeature%20Requests%2FFRDs
+ONEDRIVE_LOCAL_PATH    = C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Requests\FRDs\Claude_FRD
+SHAREPOINT_URL_PREFIX  = https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD
 JIRA_FRD_FIELD         = customfield_10124
+ONEDRIVE_SYNC_WAIT     = 10 seconds
 ```
 
 ---
@@ -97,55 +97,30 @@ Save the resulting page URL. You need it for Step 8.
 
 If this step fails, report the error and continue to Step 7.
 
-### Step 7: Upload to SharePoint
+### Step 7: Save to OneDrive (auto-syncs to SharePoint)
 
-**DO NOT use the Microsoft 365 MCP connector. It is read-only and will return 403.**
-**USE Claude in Chrome browser automation instead.**
+**DO NOT upload via Microsoft 365 MCP. DO NOT use Chrome browser automation.**
 
-If Claude in Chrome is not connected, ask the user to connect it. If the user declines, ask them to manually upload the .docx to SharePoint and provide the URL.
+The user's OneDrive folder syncs to SharePoint automatically. Save the .docx locally, wait for sync, construct the URL.
 
-**7a. Prepare chunks:**
-```bash
-base64 -w 0 /path/to/FRD.docx > /tmp/frd_b64.txt
-split -b 10000 /tmp/frd_b64.txt /tmp/frd_chunk_
+**7a. Write the .docx to:**
+```
+C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Requests\FRDs\Claude_FRD\[FILENAME].docx
 ```
 
-**7b. Navigate browser to SharePoint:**
-Navigate to: `https://friendlytech.sharepoint.com/Shared%20Documents/Forms/AllItems.aspx?id=%2FShared%20Documents%2FProduct%2FFeature%20Requests%2FFRDs`
+**7b. Wait 10 seconds** for OneDrive sync.
 
-**7c. Store chunks in browser:**
-For each chunk file, execute a `javascript_tool` call:
-```javascript
-window.__c=window.__c||[];window.__c.push("[CHUNK_CONTENT]");window.__c.length
+**7c. Construct SharePoint URL:**
+```
+https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[URL-ENCODED FILENAME].docx
 ```
 
-**7d. Upload:**
-```javascript
-(async()=>{
-  try{
-    const d=await(await fetch("https://friendlytech.sharepoint.com/_api/contextinfo",
-      {method:"POST",headers:{"Accept":"application/json;odata=verbose"}})).json();
-    const t=d.d.GetContextWebInformation.FormDigestValue;
-    const b=atob(window.__c.join(""));
-    const a=new Uint8Array(b.length);
-    for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
-    const u=await fetch(
-      "https://friendlytech.sharepoint.com/_api/web/GetFolderByServerRelativeUrl('/Shared%20Documents/Product/Feature%20Requests/FRDs')/Files/add(url='[FILENAME]',overwrite=true)",
-      {method:"POST",headers:{"Accept":"application/json;odata=verbose",
-        "X-RequestDigest":t,"Content-Type":"application/octet-stream"},body:a.buffer});
-    if(!u.ok)return"Fail:"+u.status;
-    const j=await u.json();
-    delete window.__c;
-    return"OK:"+j.d.ServerRelativeUrl
-  }catch(e){return"Err:"+e.message}
-})()
-```
+This URL goes into Jira customfield_10124 in Step 8.
 
-The SharePoint file URL is: `https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/[FILENAME]`
-
-Save this URL. You need it for Step 8.
-
-If Chrome is not available or upload fails, ask user to manually upload the .docx. Still continue to Step 8.
+**Error handling:**
+- If folder doesn't exist → ask user to create it
+- If file write fails → use Confluence URL as fallback in Jira
+- Do NOT verify the SharePoint URL is reachable — just construct it
 
 ### Step 8: Update Jira
 
