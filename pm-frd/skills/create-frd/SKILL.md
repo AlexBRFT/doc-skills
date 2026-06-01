@@ -9,10 +9,11 @@ description: "Create a Feature Requirement Document using a structured 7-section
 
 1. **TWO-PHASE WORKFLOW.** Phase 1: generate .docx draft and PRESENT IT TO THE USER. Phase 2: publish. NEVER go to Phase 2 without user saying "publish".
 2. **STOP AFTER GENERATING THE DRAFT.** Show the .docx, ask user to review. WAIT for "publish", "go", or "confirmed" before touching Confluence/SharePoint/Jira.
-3. **ALWAYS pass `parentId: "53608488"` when creating Confluence pages.** Without parentId the page lands at space root which is WRONG.
-4. **NEVER use Microsoft 365 MCP connector for SharePoint upload.** It is read-only and returns 403. Use Claude in Chrome browser automation instead.
-5. **NEVER skip the Jira update step.** Always update customfield_10124 and add a comment with actual URLs.
-6. **Acceptance criteria = checkbox list, NOT a table.** Each item: ☐ Given X, when Y, then Z.
+3. **NEVER call `getConfluenceSpaces` or list spaces. NEVER ask which space.** The space ID is `53575693`. Use it directly.
+4. **ALWAYS pass `parentId: "53608488"` when creating Confluence pages.** Without parentId the page lands at space root which is WRONG.
+5. **NEVER use Microsoft 365 MCP connector for SharePoint upload.** It is read-only and returns 403. Use Claude in Chrome browser automation instead.
+6. **NEVER skip the Jira update step.** Always update customfield_10124 and add a comment with actual URLs.
+7. **Acceptance criteria = FLAT checkbox list, NOT a table.** Each item is a paragraph: `☐ Given X, when Y, then Z`. NO columns, NO Verification Method column.
 
 ## Hardcoded Configuration — NEVER ASK THE USER FOR THESE
 
@@ -52,7 +53,18 @@ Create a Word document (.docx) with this exact structure. No emojis. No reorderi
 4. **REQUIREMENTS** — table: # | Requirement | User Story / Use Case | Description
 5. **FUNCTIONAL AND NON-FUNCTIONAL REQUIREMENTS** — Functional list + Non-functional (performance, security, scalability minimum)
 6. **USER INTERACTION AND DESIGN** — text-based flow chart showing primary user flow
-7. **ACCEPTANCE CRITERIA** — checkbox list (NOT a table). Each criterion: ☐ Given [X], when [Y], then [Z]. In Confluence use task-list elements. In .docx use ☐ unicode prefix.
+7. **ACCEPTANCE CRITERIA — CHECKBOX LIST, NOT A TABLE.**
+
+   In the .docx: each criterion is its own paragraph starting with ☐ (Unicode U+2610) followed by a space. Example:
+   ```
+   ☐ Given a user with admin role, when they click Block, then the user's session is invalidated immediately
+   ☐ Given a blocked user, when they attempt to log in, then login is silently denied
+   ☐ Given any block/unblock action, when it completes, then an audit log entry is created
+   ```
+
+   In Confluence: use `<ac:task-list>` with `<ac:task>` elements. NEVER use a `<table>` for acceptance criteria.
+
+   **DO NOT create a table with columns # | Criterion | Verification Method. That is the OLD format. The NEW format is a flat checkbox list.**
 
 Save as: `FRD-[feature-name-kebab-case].docx`
 
@@ -78,7 +90,9 @@ Present the .docx to the user. Say:
 
 ### Step 6: Confluence Page
 
-Call `createConfluencePage` with ALL of these parameters:
+**DO NOT call `getConfluenceSpaces` or any tool that lists spaces. DO NOT ask the user which space to use. The space is HARDCODED below.**
+
+Call `createConfluencePage` directly with ALL of these parameters:
 - `cloudId`: `friendly-tech.atlassian.net`
 - `spaceId`: `53575693`
 - `parentId`: `53608488` ← REQUIRED — creates page under "Feature requirement document"
@@ -87,6 +101,8 @@ Call `createConfluencePage` with ALL of these parameters:
 - `body`: FRD content as HTML with headings, tables, and task-list checkboxes
 
 **VERIFY: parentId MUST be "53608488". If you omit it, the page goes to space root which is WRONG.**
+
+If the call fails with "space not found" or similar, your Atlassian MCP connector is connected to the WRONG instance. Tell the user: "Your Atlassian connector in Cowork is not pointed at friendly-tech.atlassian.net. Please reconnect it under Customize → connectors." Do not try to find an alternative space.
 
 Save the Confluence page URL for Step 8.
 
