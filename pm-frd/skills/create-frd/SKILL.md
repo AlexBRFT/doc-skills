@@ -22,7 +22,7 @@ CONFLUENCE_CLOUD_ID    = friendly-tech.atlassian.net
 CONFLUENCE_SPACE_ID    = 53575693
 CONFLUENCE_PARENT_ID   = 53608488
 ONEDRIVE_LOCAL_PATH    = C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Requests\FRDs\Claude_FRD
-SHAREPOINT_URL_PREFIX  = https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD
+SHAREPOINT_URL_PREFIX  = https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD
 JIRA_FRD_FIELD         = customfield_10124
 ONEDRIVE_SYNC_WAIT     = 10 seconds
 ```
@@ -126,14 +126,16 @@ Use the appropriate file-writing tool to copy the generated .docx to this exact 
 
 After writing the file, wait 10 seconds. OneDrive needs time to upload the file to SharePoint.
 
-**7c. Construct the SharePoint URL:**
+**7c. Construct the SharePoint URL (opens in Word Online, NOT download):**
 
 The synced file is accessible at:
 ```
-https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[FILENAME].docx
+https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[FILENAME].docx
 ```
 
-URL-encode the filename (spaces become %20, etc.). This URL is what goes into Jira's "Link to FRD" field in Step 8.
+The `:w:/r/` prefix is critical — it opens the file in Word Online in a browser tab. Without it, the link triggers a download instead.
+
+URL-encode the filename (spaces become %20, etc.). This URL goes into Jira's "Link to FRD" field in Step 8.
 
 **Error handling:**
 - If the OneDrive folder doesn't exist → ask user to create it, then continue

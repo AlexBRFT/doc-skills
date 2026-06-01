@@ -23,7 +23,7 @@ CONFLUENCE_CLOUD_ID    = friendly-tech.atlassian.net
 CONFLUENCE_SPACE_ID    = 53575693
 CONFLUENCE_PARENT_ID   = 53608488
 ONEDRIVE_LOCAL_PATH    = C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Requests\FRDs\Claude_FRD
-SHAREPOINT_URL_PREFIX  = https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD
+SHAREPOINT_URL_PREFIX  = https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD
 JIRA_FRD_FIELD         = customfield_10124
 ONEDRIVE_SYNC_WAIT     = 10 seconds
 ```
@@ -110,10 +110,14 @@ C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Reque
 
 **7b. Wait 10 seconds** for OneDrive sync.
 
-**7c. Construct SharePoint URL:**
+**7c. Construct SharePoint URL (opens in Word Online, NOT download):**
 ```
-https://friendlytech.sharepoint.com/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[URL-ENCODED FILENAME].docx
+https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[URL-ENCODED FILENAME].docx
 ```
+
+The `:w:/r/` prefix is critical — it tells SharePoint to open the file in Word Online viewer in the browser tab instead of downloading it. Without this prefix the link will trigger a download.
+
+For other file types: use `:x:` for Excel, `:p:` for PowerPoint, `:b:` for PDF.
 
 This URL goes into Jira customfield_10124 in Step 8.
 
