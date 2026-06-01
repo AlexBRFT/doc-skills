@@ -110,24 +110,32 @@ C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Reque
 
 **7b. Wait 10 seconds** for OneDrive sync.
 
-**7c. Get the SharePoint URL via Microsoft 365 MCP:**
+**7c. Get the proper SharePoint URL — MANDATORY.**
 
-After OneDrive sync completes (10 seconds), use `sharepoint_search` from the Microsoft 365 MCP to find the file:
+The path-only URL `https://friendlytech.sharepoint.com/:w:/r/.../file.docx` triggers a download. The web-viewer URL requires query parameters: `?d=[GUID]&csf=1&web=1&e=[TOKEN]`.
 
+**You MUST get the URL with query parameters. A path-only URL is WRONG and will trigger downloads.**
+
+**Try in this exact order:**
+
+**Attempt 1: Microsoft 365 MCP search.** Call `sharepoint_search`:
 ```
-query: "[FILENAME without extension]"
+query: "[FILENAME without .docx]"
 folderName: "Claude_FRD"
 fileType: "docx"
 limit: 1
 ```
+Extract `webUrl` from the result. Verify it contains `?d=` and `&web=1`. If yes, use this URL.
 
-Extract the `webUrl` field from the result. This is the proper SharePoint URL that opens in Word Online when clicked.
+**Attempt 2: Retry after wait.** If search returned no results, wait another 15 seconds (OneDrive sync may be slow) and retry the search once more.
 
-**Why this works:** SharePoint's `webUrl` is a tokenized share link (format: `https://tenant.sharepoint.com/:w:/r/path?d=...&csf=1&web=1&e=...`). This format reliably opens the file in a browser tab. A manually constructed `/:w:/r/path.docx` URL may trigger a download depending on tenant configuration.
+**Attempt 3: Manual fallback.** If both search attempts fail, DO NOT use the path-only URL. Instead:
+1. Tell the user: "OneDrive sync seems delayed. Please open the file in SharePoint manually, click Share → Copy link, and paste the URL here."
+2. Use the URL the user provides as the SharePoint link.
 
-If `sharepoint_search` returns no results, wait another 10 seconds (sync may be slow) and retry once. If still no results, fall back to the manually constructed URL `https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[FILENAME].docx` and note in the Jira comment that the link may download instead of open.
+**Verification before continuing to Step 8:** The URL must contain `?d=` and `&web=1`. If it doesn't, do NOT proceed — get a proper URL first.
 
-This webUrl goes into Jira customfield_10124 in Step 8.
+This URL goes into Jira customfield_10124 in Step 8.
 
 **Error handling:**
 - If folder doesn't exist → ask user to create it
