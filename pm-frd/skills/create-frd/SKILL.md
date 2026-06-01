@@ -126,16 +126,24 @@ Use the appropriate file-writing tool to copy the generated .docx to this exact 
 
 After writing the file, wait 10 seconds. OneDrive needs time to upload the file to SharePoint.
 
-**7c. Construct the SharePoint URL (opens in Word Online, NOT download):**
+**7c. Get the SharePoint URL via Microsoft 365 MCP:**
 
-The synced file is accessible at:
+After OneDrive sync (10 seconds), use `sharepoint_search` from the Microsoft 365 MCP to find the file:
+
 ```
-https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[FILENAME].docx
+query: "[FILENAME without extension]"
+folderName: "Claude_FRD"
+fileType: "docx"
+limit: 1
 ```
 
-The `:w:/r/` prefix is critical — it opens the file in Word Online in a browser tab. Without it, the link triggers a download instead.
+Extract the `webUrl` field from the result. This is the proper tokenized SharePoint URL (format: `:w:/r/path?d=...&csf=1&web=1&e=...`) that reliably opens in Word Online.
 
-URL-encode the filename (spaces become %20, etc.). This URL goes into Jira's "Link to FRD" field in Step 8.
+A manually constructed `/:w:/r/path.docx` URL may trigger a download depending on tenant configuration — `webUrl` from the API always opens correctly.
+
+If `sharepoint_search` returns no results, wait another 10 seconds and retry once. If still empty, fall back to constructed URL and note the issue.
+
+This webUrl goes into Jira's "Link to FRD" field in Step 8.
 
 **Error handling:**
 - If the OneDrive folder doesn't exist → ask user to create it, then continue

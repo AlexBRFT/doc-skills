@@ -110,16 +110,24 @@ C:\Users\Alex.Baraginskii\OneDrive - Friendly Technologies\Product\Feature Reque
 
 **7b. Wait 10 seconds** for OneDrive sync.
 
-**7c. Construct SharePoint URL (opens in Word Online, NOT download):**
+**7c. Get the SharePoint URL via Microsoft 365 MCP:**
+
+After OneDrive sync completes (10 seconds), use `sharepoint_search` from the Microsoft 365 MCP to find the file:
+
 ```
-https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[URL-ENCODED FILENAME].docx
+query: "[FILENAME without extension]"
+folderName: "Claude_FRD"
+fileType: "docx"
+limit: 1
 ```
 
-The `:w:/r/` prefix is critical — it tells SharePoint to open the file in Word Online viewer in the browser tab instead of downloading it. Without this prefix the link will trigger a download.
+Extract the `webUrl` field from the result. This is the proper SharePoint URL that opens in Word Online when clicked.
 
-For other file types: use `:x:` for Excel, `:p:` for PowerPoint, `:b:` for PDF.
+**Why this works:** SharePoint's `webUrl` is a tokenized share link (format: `https://tenant.sharepoint.com/:w:/r/path?d=...&csf=1&web=1&e=...`). This format reliably opens the file in a browser tab. A manually constructed `/:w:/r/path.docx` URL may trigger a download depending on tenant configuration.
 
-This URL goes into Jira customfield_10124 in Step 8.
+If `sharepoint_search` returns no results, wait another 10 seconds (sync may be slow) and retry once. If still no results, fall back to the manually constructed URL `https://friendlytech.sharepoint.com/:w:/r/Shared%20Documents/Product/Feature%20Requests/FRDs/Claude_FRD/[FILENAME].docx` and note in the Jira comment that the link may download instead of open.
+
+This webUrl goes into Jira customfield_10124 in Step 8.
 
 **Error handling:**
 - If folder doesn't exist → ask user to create it
