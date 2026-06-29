@@ -1,8 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "doc-skills",
-  "version": "1.0.5",
-  "description": "PM document skills with FRD generator",
+  "version": "1.1.0",
+  "description": "PM document skills with FRD generator and TR-181 data model lookup",
   "owner": {
     "name": "AlexBRFT"
   },
@@ -12,6 +12,12 @@
       "description": "Feature Requirement Document generator with publish pipeline to Confluence, SharePoint, and Jira",
       "source": "./pm-frd",
       "category": "product-management"
+    },
+    {
+      "name": "tr-data-models",
+      "description": "TR-181 data model lookup for USP and CWMP. Parsed, authoritative parameter definitions for broadband device management.",
+      "source": "./tr-data-models",
+      "category": "engineering"
     }
   ]
 }

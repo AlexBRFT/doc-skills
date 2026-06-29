@@ -1,6 +1,6 @@
 # tr-data-models
 
-Claude skill for accurate TR-181 data model lookups. Parses Broadband Forum HTML data model specs into structured JSON so Claude uses exact parameter paths, types, and enums instead of guessing.
+Claude plugin for accurate TR-181 data model lookups. Parses Broadband Forum HTML specs into structured JSON so Claude uses exact parameter paths, types, and enums instead of guessing.
 
 ## Current Version
 
@@ -15,81 +15,43 @@ Claude skill for accurate TR-181 data model lookups. Parses Broadband Forum HTML
 
 ## Installation
 
-1. Download `tr-data-models.skill` from [Releases](../../releases) or build it yourself
-2. Go to Claude Settings → Profile → Skills
-3. Upload the `.skill` file
+**Cowork:** Install as part of the `doc-skills` plugin (this repo).
 
-Works in **Claude.ai** and **Cowork** (any environment with compute/bash access).
+**Claude.ai:** Go to Settings > Skills, upload the packaged `.skill` file.
 
 ## Updating to a New Data Model Version
 
 ```bash
-# 1. Download new HTML files from Broadband Forum
-#    USP: https://usp-data-models.broadband-forum.org/tr-181-VERSION-usp.html
-#    CWMP: https://cwmp-data-models.broadband-forum.org/tr-181-VERSION-cwmp.html
-
-# 2. Save them in raw/
+# 1. Download new HTML files into raw/
 cp tr-181-2-22-0-usp.htm raw/
 cp tr-181-2-22-0-cwmp.htm raw/
 
-# 3. Rebuild
+# 2. Rebuild
 pip install beautifulsoup4 lxml  # first time only
 ./rebuild.sh 2-22-0
 
-# 4. Commit and push
-git add -A
-git commit -m "Update TR-181 to 2-22-0"
-git push
+# 3. Commit and push
+git add -A && git commit -m "TR-181 2-22-0" && git push
 
-# 5. Upload tr-data-models.skill to Claude Settings > Skills
+# 4. Update plugin in Cowork
 ```
 
-## Repo Structure
+## Structure
 
 ```
 tr-data-models/
-├── SKILL.md                    # Skill instructions (loaded by Claude)
-├── rebuild.sh                  # One-command rebuild + package
-├── tr181_usp.json              # Parsed USP data model (generated)
-├── tr181_cwmp.json             # Parsed CWMP data model (generated)
-├── tr-data-models.skill        # Packaged skill file (generated)
-├── scripts/
-│   ├── lookup.py               # Runtime query tool (used by Claude)
-│   └── parse_datamodel.py      # HTML→JSON parser (used by rebuild.sh)
-├── raw/                        # Source HTML files from Broadband Forum
-│   ├── tr-181-2-21-0-usp_xml.htm
-│   └── tr-181-2-21-0-cwmp_xml.htm
+├── .claude-plugin/
+│   └── plugin.json                 # Plugin manifest
+├── skills/
+│   └── tr-data-models/
+│       ├── SKILL.md                # Skill instructions (Claude reads this)
+│       ├── scripts/
+│       │   └── lookup.py           # Runtime query tool
+│       ├── tr181_usp.json          # Parsed USP model (generated)
+│       └── tr181_cwmp.json         # Parsed CWMP model (generated)
+├── build/
+│   └── parse_datamodel.py          # HTML→JSON parser
+├── raw/                            # Source HTML from Broadband Forum
+├── rebuild.sh                      # One-command rebuild
 └── README.md
 ```
-
-## How It Works
-
-When you mention TR-181 paths, USP/CWMP parameters, or Device.* objects in a conversation, Claude reads the SKILL.md and runs `lookup.py` to query the parsed JSON. No guessing, no hallucinated parameters.
-
-### Lookup Commands (used by Claude internally)
-
-```bash
-# Get exact parameter details
-python3 scripts/lookup.py usp get Device.WiFi.Radio.Channel
-
-# List children of an object
-python3 scripts/lookup.py cwmp children Device.ManagementServer.
-
-# Search by substring
-python3 scripts/lookup.py usp search SSID
-
-# Show object tree
-python3 scripts/lookup.py usp tree Device.WiFi.
-
-# List commands/events
-python3 scripts/lookup.py usp commands Device.WiFi.
-python3 scripts/lookup.py usp events Device.
-
-# Compare USP vs CWMP
-python3 scripts/lookup.py usp diff
-```
-
-## Requirements
-
-- Python 3.8+
-- `beautifulsoup4` and `lxml` (for parsing only, not needed at runtime)

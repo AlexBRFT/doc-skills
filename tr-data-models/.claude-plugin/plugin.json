@@ -1,0 +1,8 @@
+{
+  "name": "tr-data-models",
+  "version": "1.0.0",
+  "description": "TR-181 data model lookup for USP and CWMP protocols. Provides parsed, authoritative parameter definitions — no guessing.",
+  "author": {
+    "name": "AlexBRFT"
+  }
+}

@@ -23,9 +23,11 @@ Provide exact, parse-based access to TR-181 Device:2.21 data model for USP and C
 
 ## How to Look Up
 
-Run via bash: `python3 <SKILL_DIR>/scripts/lookup.py <protocol> <action> <query>`
+Determine this skill's directory first. It is the directory containing this SKILL.md file. Then run:
 
-Where `<SKILL_DIR>` is the directory containing this SKILL.md.
+```bash
+python3 <THIS_SKILL_DIR>/scripts/lookup.py <protocol> <action> <query>
+```
 
 ### Actions
 
@@ -63,4 +65,5 @@ Device.ATM, Device.BASAPM, Device.Bridging, Device.BulkData, Device.CaptivePorta
 To update to a newer data model version:
 1. Download new HTML files from broadband-forum.org into `raw/`
 2. Run `./rebuild.sh VERSION` (e.g. `./rebuild.sh 2-22-0`)
-3. Upload the generated `tr-data-models.skill` to Claude Settings > Skills
+3. Commit and push
+4. Update the plugin in Cowork, or upload `tr-data-models.skill` to Claude Settings > Skills
