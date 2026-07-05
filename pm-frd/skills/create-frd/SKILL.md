@@ -14,6 +14,7 @@ description: "Create a Feature Requirement Document using a structured 7-section
 5. **For SharePoint: save .docx to local OneDrive folder, wait 10 seconds for sync, construct SharePoint URL.** DO NOT use Microsoft 365 MCP. DO NOT use Chrome browser automation.
 6. **NEVER skip the Jira update step.** Always update customfield_10124 and add a comment with actual URLs.
 7. **Acceptance criteria = FLAT checkbox list, NOT a table.** Each item is a paragraph: `☐ Given X, when Y, then Z`. NO columns, NO Verification Method column.
+8. **Filename MUST start with the Jira issue key.** Format: `PROD-XXX-FRD-[feature-name].docx`. Never save an FRD without the Jira key prefix.
 
 ## Hardcoded Configuration — NEVER ASK THE USER FOR THESE
 
@@ -67,7 +68,7 @@ Create a Word document (.docx) with this exact structure. No emojis. No reorderi
 
    **DO NOT create a table with columns # | Criterion | Verification Method. That is the OLD format. The NEW format is a flat checkbox list.**
 
-Save as: `FRD-[feature-name-kebab-case].docx`
+Save as: `[JIRA-KEY]-FRD-[feature-name-kebab-case].docx` — the filename MUST start with the Jira issue key (e.g. `PROD-559-FRD-admin-block-user.docx`). This makes files searchable by ticket number.
 
 ### Step 4: STOP — PRESENT DRAFT AND WAIT
 
@@ -135,7 +136,7 @@ The path-only URL `https://friendlytech.sharepoint.com/:w:/r/.../file.docx` trig
 **Try in order:**
 
 1. Call `sharepoint_search` (Microsoft 365 MCP):
-   - `query`: filename without extension
+   - `query`: Jira issue key (e.g. `PROD-559`) — filename starts with this, unique and searchable
    - `folderName`: `Claude_FRD`
    - `fileType`: `docx`
    - `limit`: 1

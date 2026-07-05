@@ -13,6 +13,7 @@ argument-hint: "<feature name or problem statement> [--jira PROD-XXX]"
 5. **For SharePoint: save .docx to local OneDrive folder, wait 10 seconds for sync, construct SharePoint URL.** DO NOT use Microsoft 365 MCP. DO NOT use Chrome browser automation.
 5. **NEVER skip the Jira step.** Always update customfield_10124 and add a comment with real URLs.
 6. **Jira comment is LAST.** Only add the comment AFTER Confluence and SharePoint, with ACTUAL URLs — never placeholders.
+7. **Filename MUST start with the Jira issue key.** Format: `PROD-XXX-FRD-[feature-name].docx` (e.g. `PROD-559-FRD-admin-block-user.docx`). Never save an FRD without the Jira key prefix.
 
 ## Hardcoded Configuration
 
@@ -54,7 +55,7 @@ Create a Word document with this exact structure (no emojis):
 6. USER INTERACTION AND DESIGN — text-based flow chart
 7. ACCEPTANCE CRITERIA — checkbox list (NOT a table). Each criterion is a line with an unchecked checkbox: ☐ Given [X], when [Y], then [Z]. QA team checks the box when passed. In Confluence, use task-list elements. In .docx, use ☐ unicode character prefix.
 
-Save as: `FRD-[feature-name-kebab-case].docx`
+Save as: `[JIRA-KEY]-FRD-[feature-name-kebab-case].docx` — the filename MUST start with the Jira issue key (e.g. `PROD-559-FRD-admin-block-user.docx`). This makes files searchable by ticket number.
 
 ### Step 4: STOP AND WAIT FOR USER REVIEW
 
@@ -120,7 +121,7 @@ The path-only URL `https://friendlytech.sharepoint.com/:w:/r/.../file.docx` trig
 
 **Attempt 1: Microsoft 365 MCP search.** Call `sharepoint_search`:
 ```
-query: "[FILENAME without .docx]"
+query: "[JIRA-KEY]" (e.g. "PROD-559" — the filename starts with this, so it is unique and searchable)
 folderName: "Claude_FRD"
 fileType: "docx"
 limit: 1
