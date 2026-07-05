@@ -49,6 +49,8 @@ Ask about: problem, target users, success criteria, constraints, scope. Skip wha
 ### Step 3: Generate FRD .docx
 Create a Word document (.docx) with this exact structure. No emojis. No reordering.
 
+**Document header:** Include only Author, Status, and Jira link. DO NOT include a Date field. Dates go stale and are unreliable — the .docx file metadata already records the creation date.
+
 1. **NAME** — concise, specific, unambiguous
 2. **WHY?** — problem and customer/business impact. Quantify where possible.
 3. **OBJECTIVE** — solution objective, what changes for the user, tie to business metrics

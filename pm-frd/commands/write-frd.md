@@ -47,6 +47,8 @@ Ask about: problem, target users, success criteria, constraints, scope. Skip wha
 
 Create a Word document with this exact structure (no emojis):
 
+**Document header:** Include only Author, Status, and Jira link. DO NOT include a Date field. Dates go stale — the .docx file metadata already records the creation date.
+
 1. NAME
 2. WHY? — problem and customer/business impact
 3. OBJECTIVE — solution objective and how it solves the problem
